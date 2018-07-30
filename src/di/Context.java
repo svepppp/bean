@@ -16,6 +16,7 @@ public class Context {
     private Map<String, Object> objectsById = new HashMap<>();
     private List<Bean> beans = new ArrayList<>();
     private Map<String, Object> objectsByClassName = new HashMap<>();
+    private List<Bean> repeats = new ArrayList<>();
 
     public Context(String xmlPath) {
         // парсинг xml -- заполнение beans
@@ -39,7 +40,7 @@ public class Context {
         // можно создать экземпляры на основе beans
         // beans -> objectsById
         try {
-            instantiateBeans();
+            instantiateBeans(beans);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } catch (InstantiationException e) {
@@ -109,47 +110,65 @@ public class Context {
         }
     }
 
-    private void instantiateBeans() throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchFieldException, InvalidConfigurationException {
-        for (Bean bean : beans) {
+    private void instantiateBeans(List<Bean> beans) throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchFieldException, InvalidConfigurationException {
+        Bean tempBean = null;
+        for (int i = 0; i < beans.size(); i++) {
+            Bean bean = beans.get(i);
             Class<?> aClass = Class.forName(bean.getClassName());
             Object ob = aClass.newInstance();
-
             //   System.out.println(ob );
+            System.out.println(i);
             processAnnotation(aClass, ob);
-
             // настройка
             for (String id : bean.getProperties().keySet()) {
                 Field field = getField(aClass, id);
-
                 if (field == null) {
                     throw new InvalidConfigurationException("Failded to set field " + id + " for class: " + aClass.getName());
                 }
                 field.setAccessible(true);
-
                 Property property = bean.getProperties().get(id);
-
                 switch (property.getType()) {
                     case VALUE:
                         field.set(ob, convert(field.getType().getName(), property.getValue()));
+                        objectsById.put(bean.getId(), ob);
+                        objectsByClassName.put(bean.getClassName(), ob);
                         break;
                     case REF:
                         String refName = property.getValue();
                         if (objectsById.containsKey(refName)) {
                             field.set(ob, objectsById.get(refName));
+                            objectsById.put(bean.getId(), ob);
+                            objectsByClassName.put(bean.getClassName(), ob);
                         } else {
-                            throw new InvalidConfigurationException("Failed instantiate bean, ref: " + id);
+                            //throw new InvalidConfigurationException("Failed instantiate bean, ref: " + id);
+                            if (tempBean != bean) {
+                                repeats.add(bean);
+                                tempBean = bean;
+                                //  System.out.println(bean);
+                            }
                         }
                         break;
                     default:
                         throw new InvalidConfigurationException("Type error");
                 }
             }
-            objectsById.put(bean.getId(), ob);
+          /*  objectsById.put(bean.getId(), ob);
             Class<?> superclass = aClass.getSuperclass();
             if (superclass != Object.class) {
                 bean.setClassName(superclass.getName());
             }
-            objectsByClassName.put(bean.getClassName(), ob);
+            objectsByClassName.put(bean.getClassName(), ob);*/
+        }
+        if (repeats.size() != 0) {
+            List<Bean> temp = new ArrayList<>();
+            for (int i = 0; i < repeats.size(); i++) {
+                temp.add(repeats.get(i));
+            }
+            System.out.println("*");
+            while (repeats.size() != 0) {
+                repeats.remove(0);
+            }
+            instantiateBeans(temp);
         }
     }
 

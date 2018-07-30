@@ -1,12 +1,12 @@
 <root>
+    <bean id="car" class="Car">
+        <property name="engine" ref="engine"/>
+        <property name="gear" ref="gear"/>
+    </bean>
     <bean id="engine" class="Engine">
         <property name="power" val="230"/>
     </bean>
     <bean id="gear" class="Manual">
         <property name="count" val="2"/>
-    </bean>
-    <bean id="car" class="Car">
-        <!--<property name="engine" ref="engine"/>-->
-        <!--<property name="gear" ref="gear"/>-->
     </bean>
 </root>
