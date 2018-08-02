@@ -112,21 +112,22 @@ public class Context {
 
     private void instantiateBeans(List<Bean> beans) throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchFieldException, InvalidConfigurationException {
         Bean tempBean = null;
-        for (int i = 0; i < beans.size(); i++) {
-            Bean bean = beans.get(i);
+        for (Bean bean : beans) {
             Class<?> aClass = Class.forName(bean.getClassName());
             Object ob = aClass.newInstance();
-            //   System.out.println(ob );
-            System.out.println(i);
             processAnnotation(aClass, ob);
+            //System.out.println("1" + ob + bean.getProperties().size());
             // настройка
-            for (String id : bean.getProperties().keySet()) {
-                Field field = getField(aClass, id);
+            for (String name : bean.getProperties().keySet()) {
+                // System.out.println("2" + name);
+                Field field = getField(aClass, name);
+
                 if (field == null) {
-                    throw new InvalidConfigurationException("Failded to set field " + id + " for class: " + aClass.getName());
+                    throw new InvalidConfigurationException("Failded to set field " + name + " for class: " + aClass.getName());
                 }
                 field.setAccessible(true);
-                Property property = bean.getProperties().get(id);
+                Property property = bean.getProperties().get(name);
+                //System.out.println("2"+property);
                 switch (property.getType()) {
                     case VALUE:
                         field.set(ob, convert(field.getType().getName(), property.getValue()));
@@ -136,10 +137,20 @@ public class Context {
                     case REF:
                         String refName = property.getValue();
                         if (objectsById.containsKey(refName)) {
+                            //   System.out.println("3"+refName);
+                            for (Bean bean1 : beans) {  //  проверка кольцевой зависимости
+                                if (bean1.getId().equals(refName)) {
+                                    for (String name1 : bean1.getProperties().keySet()) {
+                                    }
+                                    if (bean1.getProperties().containsKey(bean.getId())) {
+                                        throw new InvalidConfigurationException("Кольцевая зависимость  " + name + " и " + bean.getId());
+                                    }
+                                }
+                            }
                             field.set(ob, objectsById.get(refName));
                             objectsById.put(bean.getId(), ob);
                             objectsByClassName.put(bean.getClassName(), ob);
-                        } else {
+                        } else {   // не проинстанцирован
                             //throw new InvalidConfigurationException("Failed instantiate bean, ref: " + id);
                             if (tempBean != bean) {
                                 repeats.add(bean);
@@ -152,7 +163,7 @@ public class Context {
                         throw new InvalidConfigurationException("Type error");
                 }
             }
-          /*  objectsById.put(bean.getId(), ob);
+         /* objectsById.put(bean.getId(), ob);
             Class<?> superclass = aClass.getSuperclass();
             if (superclass != Object.class) {
                 bean.setClassName(superclass.getName());
@@ -164,13 +175,16 @@ public class Context {
             for (int i = 0; i < repeats.size(); i++) {
                 temp.add(repeats.get(i));
             }
-            System.out.println("*");
             while (repeats.size() != 0) {
                 repeats.remove(0);
             }
-            instantiateBeans(temp);
+            instantiateBeans(temp);    //  рекурсия
         }
+       /* for (Object o :objectsByClassName.values()) {
+            System.out.println(o);*/
+
     }
+
 
     private void processAnnotation(Class<?> clazz, Object instance) throws InvalidConfigurationException, IllegalAccessException {
         Field[] fields = clazz.getDeclaredFields();
