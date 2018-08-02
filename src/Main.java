@@ -5,6 +5,6 @@ public class Main {
         Context context = new Context("config.xml");
         Car car = (Car) context.getBean("car");
 
-        System.out.println(car);
+       System.out.println(car);
     }
 }
