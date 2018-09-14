@@ -161,14 +161,13 @@ public class Context {
                 if (auto.isRequired() && !objectsByClassName.containsKey(field.getType().getName())) {
                     throw new InvalidConfigurationException("Failed @Auto " + field.getName() + " " + field.getType());
                 } else {
-                    Class<?> fieldTypeClass = field.getType();
+                    Class<?> fieldTypeClass = field.getType();    // по хасангу
                     Collection<Object> values = objectsByClassName.values();
                     System.out.println(objectsByClassName.keySet()+" "+fieldTypeClass);
                     for (Object value : values) {
                         if (fieldTypeClass.isInstance(value)) {
                             Object o = value;
-                        //    System.out.println(fieldTypeClass + "  " + o);
-                            field.setAccessible(true);
+                          field.setAccessible(true);
                             field.set(instance, o);
                         }
                     }
