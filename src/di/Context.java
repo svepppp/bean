@@ -152,7 +152,7 @@ public class Context {
                             objectsByClassName.put(bean.getClassName(), ob);
                         } else {   // не проинстанцирован
                             //throw new InvalidConfigurationException("Failed instantiate bean, ref: " + id);
-                            if (tempBean != bean) {
+                            if (tempBean != bean) {// многоходовка
                                 repeats.add(bean);
                                 tempBean = bean;
                                 //  System.out.println(bean);
@@ -170,7 +170,7 @@ public class Context {
             }
             objectsByClassName.put(bean.getClassName(), ob);*/
         }
-        if (repeats.size() != 0) {
+        if (repeats.size() != 0) {  //многоходовка
             List<Bean> temp = new ArrayList<>();
             for (int i = 0; i < repeats.size(); i++) {
                 temp.add(repeats.get(i));
