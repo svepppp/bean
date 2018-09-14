@@ -145,10 +145,10 @@ public class Context {
                 }
             }
             objectsById.put(bean.getId(), ob);
-            Class<?> superclass = aClass.getSuperclass();
+         /*  Class<?> superclass = aClass.getSuperclass();
             if (superclass != Object.class) {
                 bean.setClassName(superclass.getName());
-            }
+            }*/
             objectsByClassName.put(bean.getClassName(), ob);
         }
     }
@@ -161,15 +161,22 @@ public class Context {
                 if (auto.isRequired() && !objectsByClassName.containsKey(field.getType().getName())) {
                     throw new InvalidConfigurationException("Failed @Auto " + field.getName() + " " + field.getType());
                 } else {
-                    if (objectsByClassName.containsKey(field.getType().getName())) {
-                        Object o = objectsByClassName.get(field.getType().getName());
-                        field.setAccessible(true);
-                        field.set(instance, o);
+                    Class<?> fieldTypeClass = field.getType();
+                    Collection<Object> values = objectsByClassName.values();
+                    System.out.println(objectsByClassName.keySet()+" "+fieldTypeClass);
+                    for (Object value : values) {
+                        if (fieldTypeClass.isInstance(value)) {
+                            Object o = value;
+                        //    System.out.println(fieldTypeClass + "  " + o);
+                            field.setAccessible(true);
+                            field.set(instance, o);
+                        }
                     }
                 }
             }
         }
     }
+
 
     private Object convert(String typeName, String value) throws InvalidConfigurationException {
         switch (typeName) {
